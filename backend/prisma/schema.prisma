@@ -1,0 +1,242 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  DENTIST
+  RECEPTION
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  COMPLETED
+  CANCELED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+}
+
+enum TreatmentStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELED
+}
+
+model User {
+  id                      String               @id @default(uuid())
+  name                    String
+  email                   String               @unique
+  passwordHash            String
+  role                    Role
+  createdAt               DateTime             @default(now())
+  updatedAt               DateTime             @updatedAt
+  appointmentsAsDentist   Appointment[]        @relation("DentistAppointments")
+  appointmentsAsReception Appointment[]        @relation("ReceptionAppointments")
+  records                 MedicalRecord[]
+  anamneses               Anamnesis[]          @relation("AnamnesisCreator")
+  logs                    ActivityLog[]
+  resetTokens             PasswordResetToken[]
+  clinicalRecords         ClinicalRecord[]     @relation("DentistClinicalRecords")
+  odontograms             Odontogram[]         @relation("DentistOdontogram")
+  attachmentsUploaded     Attachment[]
+}
+
+model Patient {
+  id                String              @id @default(uuid())
+  fullName          String
+  email             String?
+  phone             String
+  birthDate         DateTime
+  document          String              @unique
+  address           String
+  lgpdConsent       Boolean             @default(false)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  appointments      Appointment[]
+  medicalRecords    MedicalRecord[]
+  anamneses         Anamnesis[]
+  treatments        Treatment[]
+  clinicalRecords   ClinicalRecord[]    @relation("PatientClinicalRecords")
+  odontogram        Odontogram?         @relation("PatientOdontogram")
+  attachments       Attachment[]        @relation("PatientAttachments")
+}
+
+model Appointment {
+  id             String            @id @default(uuid())
+  patientId      String
+  dentistId      String
+  receptionistId String?
+  startAt        DateTime
+  endAt          DateTime
+  notes          String?
+  status         AppointmentStatus @default(SCHEDULED)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  patient        Patient           @relation(fields: [patientId], references: [id])
+  dentist        User              @relation("DentistAppointments", fields: [dentistId], references: [id])
+  receptionist   User?             @relation("ReceptionAppointments", fields: [receptionistId], references: [id])
+  medicalRecords MedicalRecord[]
+  clinicalRecords ClinicalRecord[] @relation("AppointmentClinicalRecords")
+
+  @@index([startAt])
+}
+
+model MedicalRecord {
+  id            String       @id @default(uuid())
+  patientId     String
+  dentistId     String
+  appointmentId String?
+  diagnosis     String
+  treatmentPlan String
+  evolution     String
+  createdAt     DateTime     @default(now())
+  patient       Patient      @relation(fields: [patientId], references: [id])
+  dentist       User         @relation(fields: [dentistId], references: [id])
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id])
+
+  @@index([patientId, createdAt])
+}
+
+model Anamnesis {
+  id               String   @id @default(uuid())
+  patientId        String
+  createdById      String?
+  version          Int
+  allergies        String
+  medications      String
+  systemicDiseases String
+  notes            String
+  createdAt        DateTime @default(now())
+  patient          Patient  @relation(fields: [patientId], references: [id])
+  createdBy        User?    @relation("AnamnesisCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@unique([patientId, version])
+}
+
+model Payment {
+  id                  String        @id @default(uuid())
+  treatmentId         String
+  amount              Decimal       @db.Decimal(10, 2)
+  installmentNumber   Int           // Ex: 1 (primeira parcela)
+  totalInstallments   Int           // Ex: 4 (total de 4 parcelas)
+  dueDate             DateTime
+  paidAt              DateTime?
+  method              String?       // CASH, CREDIT_CARD, DEBIT_CARD, TRANSFER
+  status              PaymentStatus @default(PENDING)
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+  treatment           Treatment     @relation(fields: [treatmentId], references: [id], onDelete: Cascade)
+
+  @@index([treatmentId, status])
+  @@index([dueDate])
+}
+
+model Treatment {
+  id              String            @id @default(uuid())
+  patientId       String
+  description     String            // Ex: "Tratamento de cárie - dente 14"
+  totalAmount     Decimal           @db.Decimal(10, 2)
+  status          TreatmentStatus   @default(PENDING)
+  startDate       DateTime          @default(now())
+  completedAt     DateTime?
+  observations    String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  patient         Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  payments        Payment[]
+
+  @@index([patientId, status])
+  @@index([createdAt])
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  userId    String
+  action    String
+  entity    String
+  entityId  String
+  metadata  Json
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([createdAt])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([token, expiresAt])
+}
+
+model ClinicalRecord {
+  id              String   @id @default(uuid())
+  patientId       String
+  dentistId       String?
+  appointmentId   String?
+  procedures      String   // Descrição dos procedimentos realizados
+  diagnosis       String   // Diagnóstico
+  treatmentPlan   String   // Plano de tratamento
+  notes           String?  // Observações adicionais
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  patient         Patient  @relation("PatientClinicalRecords", fields: [patientId], references: [id], onDelete: Cascade)
+  dentist         User?    @relation("DentistClinicalRecords", fields: [dentistId], references: [id], onDelete: SetNull)
+  appointment     Appointment? @relation("AppointmentClinicalRecords", fields: [appointmentId], references: [id], onDelete: SetNull)
+  attachments     Attachment[]
+
+  @@index([patientId, createdAt])
+  @@index([dentistId])
+}
+
+model Odontogram {
+  id            String   @id @default(uuid())
+  patientId     String   @unique
+  dentistId     String?
+  teeth         Json     // Estrutura JSON com dados de todos os dentes (32 dentes permanentes)
+  observations  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  patient       Patient  @relation("PatientOdontogram", fields: [patientId], references: [id], onDelete: Cascade)
+  dentist       User?    @relation("DentistOdontogram", fields: [dentistId], references: [id], onDelete: SetNull)
+
+  @@index([patientId])
+}
+
+model Attachment {
+  id              String   @id @default(uuid())
+  patientId       String
+  clinicalRecordId String?
+  uploadedById    String?
+  fileName        String
+  originalName    String   // Nome original do arquivo
+  fileType        String   // MIME type (image/jpeg, application/pdf, etc)
+  fileSize        Int      // Tamanho em bytes
+  filePath        String   // Caminho do arquivo no servidor
+  category        String   // raio-x, foto, documento, exame, outro
+  description     String?  // Descrição adicional
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  patient         Patient  @relation("PatientAttachments", fields: [patientId], references: [id], onDelete: Cascade)
+  clinicalRecord  ClinicalRecord? @relation(fields: [clinicalRecordId], references: [id], onDelete: SetNull)
+  uploadedBy      User?    @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  @@index([patientId])
+  @@index([clinicalRecordId])
+  @@index([createdAt])
+}
