@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, Eye, DollarSign } from 'lucide-react';
+import { Calendar, Eye, DollarSign, Search, X } from 'lucide-react';
 import { api } from '../../services/api';
 import { maskCurrency } from '../../utils/masks';
 
@@ -10,6 +10,10 @@ export const AppointmentsPage = () => {
   const [users, setUsers] = useState([]);
   const [form, setForm] = useState({ patientId: '', dentistId: '', startAt: '', endAt: '', notes: '', amount: '' });
   const [message, setMessage] = useState('');
+  const [patientSearch, setPatientSearch] = useState('');
+  const [showPatientSuggestions, setShowPatientSuggestions] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const searchRef = useRef(null);
 
   const loadData = async () => {
     const startAt = new Date();
@@ -32,6 +36,35 @@ export const AppointmentsPage = () => {
     loadData();
   }, []);
 
+  useEffect(() => {
+    // Fecha as sugestões ao clicar fora
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowPatientSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const filteredPatients = patients.filter(patient =>
+    patient.fullName?.toLowerCase().includes(patientSearch.toLowerCase()) ||
+    patient.cpf?.includes(patientSearch)
+  );
+
+  const selectPatient = (patient) => {
+    setSelectedPatient(patient);
+    setForm({ ...form, patientId: patient.id });
+    setPatientSearch(patient.fullName);
+    setShowPatientSuggestions(false);
+  };
+
+  const clearPatient = () => {
+    setSelectedPatient(null);
+    setForm({ ...form, patientId: '' });
+    setPatientSearch('');
+  };
+
   const createAppointment = async (event) => {
     event.preventDefault();
     setMessage('');
@@ -52,6 +85,7 @@ export const AppointmentsPage = () => {
       await api.post('/appointments', appointmentData);
       setMessage('Consulta criada com sucesso.');
       setForm({ patientId: '', dentistId: '', startAt: '', endAt: '', notes: '', amount: '' });
+      clearPatient();
       await loadData();
     } catch (error) {
       setMessage(error.response?.data?.message || 'Falha ao criar consulta.');
@@ -77,12 +111,54 @@ export const AppointmentsPage = () => {
       </header>
 
       <form onSubmit={createAppointment} className="grid gap-3 rounded-2xl border border-slate-200 p-4 dark:border-slate-700 md:grid-cols-2 xl:grid-cols-5">
-        <select value={form.patientId} onChange={(event) => setForm({ ...form, patientId: event.target.value })} className="rounded-lg border border-slate-300 px-3 py-2 dark:bg-slate-900">
-          <option value="">Paciente</option>
-          {patients.map((patient) => (
-            <option key={patient.id} value={patient.id}>{patient.fullName}</option>
-          ))}
-        </select>
+        <div className="relative" ref={searchRef}>
+          <div className="relative">
+            <input
+              type="text"
+              value={patientSearch}
+              onChange={(e) => {
+                setPatientSearch(e.target.value);
+                setShowPatientSuggestions(true);
+              }}
+              onFocus={() => setShowPatientSuggestions(true)}
+              placeholder="Pesquisar paciente..."
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 pr-20 dark:bg-slate-900"
+            />
+            <Search className="pointer-events-none absolute left-auto right-10 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            {selectedPatient && (
+              <button
+                type="button"
+                onClick={clearPatient}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                <X size={18} />
+              </button>
+            )}
+          </div>
+          
+          {showPatientSuggestions && patientSearch && (
+            <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-slate-300 bg-white shadow-lg dark:border-slate-600 dark:bg-slate-800">
+              {filteredPatients.length > 0 ? (
+                filteredPatients.map((patient) => (
+                  <button
+                    key={patient.id}
+                    type="button"
+                    onClick={() => selectPatient(patient)}
+                    className="w-full px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-slate-700"
+                  >
+                    <p className="font-medium text-slate-900 dark:text-slate-100">{patient.fullName}</p>
+                    {patient.cpf && (
+                      <p className="text-xs text-slate-500 dark:text-slate-400">CPF: {patient.cpf}</p>
+                    )}
+                  </button>
+                ))
+              ) : (
+                <p className="px-3 py-2 text-sm text-slate-500">Nenhum paciente encontrado</p>
+              )}
+            </div>
+          )}
+        </div>
+        
         <select value={form.dentistId} onChange={(event) => setForm({ ...form, dentistId: event.target.value })} className="rounded-lg border border-slate-300 px-3 py-2 dark:bg-slate-900">
           <option value="">Dentista</option>
           {dentists.map((dentist) => (

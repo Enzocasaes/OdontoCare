@@ -2,7 +2,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useDispatch, useSelector } from 'react-redux';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, Navigate } from 'react-router-dom';
 import { login } from './authSlice';
 
 const schema = z.object({
@@ -13,12 +13,17 @@ const schema = z.object({
 export const LoginPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { loading, error } = useSelector((state) => state.auth);
+  const { loading, error, token } = useSelector((state) => state.auth);
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm({ resolver: zodResolver(schema) });
+
+  // Se já estiver autenticado, redireciona para home
+  if (token) {
+    return <Navigate to="/" replace />;
+  }
 
   const onSubmit = async (data) => {
     const result = await dispatch(login(data));

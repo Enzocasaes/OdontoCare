@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { FileText, Plus, Loader, Paperclip } from 'lucide-react';
+import { FileText, Plus, Loader, Paperclip, DollarSign } from 'lucide-react';
 import api from '../../services/api';
 import { ClinicalRecordForm, ClinicalRecordList } from './ClinicalRecord';
 import { Odontogram } from './Odontogram';
 import { AttachmentUpload, AttachmentList } from './Attachments';
+import { PatientFinancialOverview, CreateTreatmentForm } from '../../components/PatientFinancialOverview';
 
 export function PatientRecordsPage() {
   const { patientId } = useParams();
@@ -229,6 +230,17 @@ export function PatientRecordsPage() {
               <Paperclip className="w-4 h-4" />
               Anexos ({attachments.length})
             </button>
+            <button
+              onClick={() => setActiveTab('financial')}
+              className={`px-6 py-3 font-medium border-b-2 flex items-center gap-2 ${
+                activeTab === 'financial'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <DollarSign className="w-4 h-4" />
+              Financeiro
+            </button>
           </div>
         </div>
 
@@ -416,6 +428,23 @@ export function PatientRecordsPage() {
                   />
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Financial Tab */}
+          {activeTab === 'financial' && (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold text-gray-900">Gestão Financeira</h2>
+              
+              <CreateTreatmentForm 
+                patientId={patientId} 
+                onSuccess={() => {
+                  // Reload para atualizar a lista
+                  window.location.reload();
+                }}
+              />
+              
+              <PatientFinancialOverview patientId={patientId} />
             </div>
           )}
         </div>

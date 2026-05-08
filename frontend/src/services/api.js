@@ -36,4 +36,23 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
+// Interceptor de resposta para tratar erros de autenticação
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Se receber 401, limpa o token e redireciona para login
+    if (error.response?.status === 401) {
+      localStorage.removeItem('odontocare_token');
+      localStorage.removeItem('odontocare_user');
+      setAuthToken(null);
+      
+      // Redireciona para login se não estiver em uma rota de auth
+      if (!window.location.pathname.startsWith('/login') && !window.location.pathname.startsWith('/register')) {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;

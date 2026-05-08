@@ -1,7 +1,8 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, Navigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { api } from '../../services/api';
 import { maskOnlyLetters } from '../../utils/masks';
 
@@ -14,6 +15,7 @@ const schema = z.object({
 
 export const RegisterPage = () => {
   const navigate = useNavigate();
+  const { token } = useSelector((state) => state.auth);
   const {
     register,
     handleSubmit,
@@ -24,6 +26,11 @@ export const RegisterPage = () => {
     resolver: zodResolver(schema),
     defaultValues: { role: 'RECEPTION' },
   });
+
+  // Se já estiver autenticado, redireciona para home
+  if (token) {
+    return <Navigate to="/" replace />;
+  }
 
   const nameValue = watch('name');
 

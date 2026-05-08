@@ -23,9 +23,34 @@ const sanitizeValue = (value) => {
   return value;
 };
 
+// CORS configuration - allows localhost in development
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // In development, allow any localhost or 127.0.0.1 with any port
+    if (env.nodeEnv === 'development') {
+      const localhostRegex = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+      if (localhostRegex.test(origin)) {
+        return callback(null, true);
+      }
+    }
+    
+    // Check against configured origins
+    const allowedOrigins = Array.isArray(env.corsOrigin) ? env.corsOrigin : [env.corsOrigin];
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true
+};
+
 export const securityStack = [
   helmet(),
-  cors({ origin: env.corsOrigin, credentials: true }),
+  cors(corsOptions),
   compression(),
   cookieParser(),
   morgan('dev'),

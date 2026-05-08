@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Upload, X, FileText, Image, File } from 'lucide-react';
+import { Upload, X, FileText, Image, File, Activity, Paperclip } from 'lucide-react';
 import api from '../../services/api';
 
 export function AttachmentUpload({ patientId, clinicalRecordId, onUploadSuccess, isLoading = false }) {
@@ -11,11 +11,11 @@ export function AttachmentUpload({ patientId, clinicalRecordId, onUploadSuccess,
   const [error, setError] = useState(null);
 
   const categories = [
-    { value: 'raio-x', label: 'Raio-X', icon: '🦷' },
-    { value: 'foto', label: 'Foto', icon: '📸' },
-    { value: 'documento', label: 'Documento', icon: '📄' },
-    { value: 'exame', label: 'Exame', icon: '🔬' },
-    { value: 'outro', label: 'Outro', icon: '📎' },
+    { value: 'raio-x', label: 'Raio-X', Icon: FileText },
+    { value: 'foto', label: 'Foto', Icon: Image },
+    { value: 'documento', label: 'Documento', Icon: File },
+    { value: 'exame', label: 'Exame', Icon: Activity },
+    { value: 'outro', label: 'Outro', Icon: Paperclip },
   ];
 
   const handleDrag = (e) => {
@@ -150,22 +150,25 @@ export function AttachmentUpload({ patientId, clinicalRecordId, onUploadSuccess,
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Tipo de Documento *
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-              {categories.map(cat => (
-                <button
-                  key={cat.value}
-                  type="button"
-                  onClick={() => setCategory(cat.value)}
-                  className={`min-h-28 p-3 rounded-xl border-2 text-center text-sm font-medium transition-all flex flex-col items-center justify-center gap-2 leading-tight ${
-                    category === cat.value
-                      ? 'border-blue-600 bg-blue-50 text-blue-600'
-                      : 'border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50'
-                  }`}
-                >
-                  <div className="text-2xl leading-none">{cat.icon}</div>
-                  {cat.label}
-                </button>
-              ))}
+            <div className="space-y-2">
+              {categories.map(cat => {
+                const Icon = cat.Icon;
+                return (
+                  <button
+                    key={cat.value}
+                    type="button"
+                    onClick={() => setCategory(cat.value)}
+                    className={`w-full px-4 py-3 rounded-lg border-2 text-sm font-medium transition-all flex items-center gap-3 ${
+                      category === cat.value
+                        ? 'border-blue-600 bg-blue-50 text-blue-600'
+                        : 'border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50'
+                    }`}
+                  >
+                    <Icon className="w-5 h-5 flex-shrink-0" strokeWidth={1.5} />
+                    <span>{cat.label}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 

@@ -16,6 +16,7 @@ import { UsersPage } from '../features/users/UsersPage';
 import { DentistsPage } from '../features/dentists/DentistsPage';
 import { LogsPage } from '../features/logs/LogsPage';
 import { PatientRecordsPage } from '../features/medical-records/PatientRecordsPage';
+import { ReportsPage } from '../features/reports/ReportsPage';
 
 export const AppRouter = () => {
   return (
@@ -46,6 +47,14 @@ export const AppRouter = () => {
           element={
             <ProtectedRoute roles={['ADMIN', 'RECEPTION']}>
               <FinancePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="reports"
+          element={
+            <ProtectedRoute roles={['ADMIN', 'RECEPTION']}>
+              <ReportsPage />
             </ProtectedRoute>
           }
         />
