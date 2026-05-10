@@ -4,7 +4,7 @@ import { csrfProtection, securityStack } from './middlewares/securityMiddleware.
 import { errorHandler, notFound } from './middlewares/errorMiddleware.js';
 
 const shouldSkipCsrf = (path) =>
-  ['/api/auth/login', '/api/auth/register', '/api/auth/forgot-password', '/api/auth/reset-password', '/api/health'].includes(path);
+  ['/api/auth/login', '/api/auth/forgot-password', '/api/auth/reset-password', '/api/health'].includes(path);
 
 export const app = express();
 

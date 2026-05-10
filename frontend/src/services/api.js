@@ -26,7 +26,7 @@ const loadCsrfToken = async () => {
 api.interceptors.request.use(async (config) => {
   const method = (config.method || 'get').toLowerCase();
   const isMutating = ['post', 'put', 'patch', 'delete'].includes(method);
-  const skipCsrf = ['/auth/login', '/auth/register', '/auth/forgot-password', '/auth/reset-password'].includes(config.url);
+  const skipCsrf = ['/auth/login', '/auth/forgot-password', '/auth/reset-password'].includes(config.url);
 
   if (isMutating && !skipCsrf) {
     const token = await loadCsrfToken();
@@ -47,7 +47,7 @@ api.interceptors.response.use(
       setAuthToken(null);
       
       // Redireciona para login se não estiver em uma rota de auth
-      if (!window.location.pathname.startsWith('/login') && !window.location.pathname.startsWith('/register')) {
+      if (!window.location.pathname.startsWith('/login')) {
         window.location.href = '/login';
       }
     }

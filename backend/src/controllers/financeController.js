@@ -8,12 +8,12 @@ export class FinanceController {
   // ========== TRATAMENTOS ==========
 
   createTreatment = asyncHandler(async (req, res) => {
-    const treatment = await this.financeService.createTreatment(req.body, req.user.id);
+    const treatment = await this.financeService.createTreatment(req.body, req.user?.clinicId, req.user.id);
     res.status(201).json(treatment);
   });
 
   getTreatment = asyncHandler(async (req, res) => {
-    const treatment = await this.financeService.getTreatment(req.params.id);
+    const treatment = await this.financeService.getTreatment(req.params.id, req.user?.clinicId);
     if (!treatment) {
       return res.status(404).json({ message: 'Tratamento não encontrado' });
     }
@@ -25,7 +25,7 @@ export class FinanceController {
     if (req.query.patientId) filters.patientId = req.query.patientId;
     if (req.query.status) filters.status = req.query.status;
 
-    const treatments = await this.financeService.listTreatments(filters);
+    const treatments = await this.financeService.listTreatments(filters, req.user?.clinicId);
     res.json(treatments);
   });
 
@@ -35,7 +35,8 @@ export class FinanceController {
 
     const treatments = await this.financeService.getPatientTreatments(
       req.params.patientId,
-      filters
+      filters,
+      req.user?.clinicId
     );
     res.json(treatments);
   });
@@ -44,13 +45,14 @@ export class FinanceController {
     const treatment = await this.financeService.updateTreatmentStatus(
       req.params.id,
       req.body.status,
+      req.user?.clinicId,
       req.user.id
     );
     res.json(treatment);
   });
 
   getPatientFinancialSummary = asyncHandler(async (req, res) => {
-    const summary = await this.financeService.getPatientFinancialSummary(req.params.patientId);
+    const summary = await this.financeService.getPatientFinancialSummary(req.params.patientId, req.user?.clinicId);
     res.json(summary);
   });
 
@@ -60,18 +62,19 @@ export class FinanceController {
     const payment = await this.financeService.registerPayment(
       req.params.id,
       req.body,
+      req.user?.clinicId,
       req.user.id
     );
     res.json(payment);
   });
 
   cancelPayment = asyncHandler(async (req, res) => {
-    const payment = await this.financeService.cancelPayment(req.params.id, req.user.id);
+    const payment = await this.financeService.cancelPayment(req.params.id, req.user?.clinicId, req.user.id);
     res.json(payment);
   });
 
   getPayment = asyncHandler(async (req, res) => {
-    const payment = await this.financeService.getPayment(req.params.id);
+    const payment = await this.financeService.getPayment(req.params.id, req.user?.clinicId);
     if (!payment) {
       return res.status(404).json({ message: 'Pagamento não encontrado' });
     }
@@ -83,24 +86,24 @@ export class FinanceController {
     if (req.query.treatmentId) filters.treatmentId = req.query.treatmentId;
     if (req.query.status) filters.status = req.query.status;
 
-    const payments = await this.financeService.listPayments(filters);
+    const payments = await this.financeService.listPayments(filters, req.user?.clinicId);
     res.json(payments);
   });
 
   getOverduePayments = asyncHandler(async (req, res) => {
-    const payments = await this.financeService.getOverduePayments();
+    const payments = await this.financeService.getOverduePayments(req.user?.clinicId);
     res.json(payments);
   });
 
   getTreatmentPayments = asyncHandler(async (req, res) => {
-    const payments = await this.financeService.getTreatmentPayments(req.params.treatmentId);
+    const payments = await this.financeService.getTreatmentPayments(req.params.treatmentId, req.user?.clinicId);
     res.json(payments);
   });
 
   // ========== MÉTODOS LEGADOS ==========
 
   createPayment = asyncHandler(async (req, res) => {
-    const payment = await this.financeService.createPayment(req.body, req.user.id);
+    const payment = await this.financeService.createPayment(req.body, req.user?.clinicId, req.user.id);
     res.status(201).json(payment);
   });
 
@@ -108,13 +111,14 @@ export class FinanceController {
     const payment = await this.financeService.updatePaymentStatus(
       req.params.id,
       req.body.status,
+      req.user?.clinicId,
       req.user.id
     );
     res.json(payment);
   });
 
-  list = asyncHandler(async (_req, res) => {
-    const payments = await this.financeService.listPayments();
+  list = asyncHandler(async (req, res) => {
+    const payments = await this.financeService.listPayments({}, req.user?.clinicId);
     res.json(payments);
   });
 }

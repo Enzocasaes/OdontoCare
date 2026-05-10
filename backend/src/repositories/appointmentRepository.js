@@ -7,25 +7,31 @@ export class AppointmentRepository {
     return this.prisma.appointment.create({ data, include: { patient: true, dentist: true } });
   }
 
-  update(id, data) {
+  async update(id, clinicId, data) {
+    const appointment = await this.prisma.appointment.findFirst({ where: { id, clinicId } });
+
+    if (!appointment) {
+      return null;
+    }
+
     return this.prisma.appointment.update({ where: { id }, data, include: { patient: true, dentist: true } });
   }
 
-  listByPeriod(startAt, endAt) {
+  listByPeriod(startAt, endAt, clinicId) {
     return this.prisma.appointment.findMany({
-      where: { startAt: { gte: startAt, lte: endAt } },
+      where: { clinicId, startAt: { gte: startAt, lte: endAt } },
       include: { patient: true, dentist: true },
       orderBy: { startAt: 'asc' },
     });
   }
 
-  listToday(startAt, endAt) {
-    return this.listByPeriod(startAt, endAt);
+  listToday(startAt, endAt, clinicId) {
+    return this.listByPeriod(startAt, endAt, clinicId);
   }
 
-  getById(id) {
-    return this.prisma.appointment.findUnique({
-      where: { id },
+  getById(id, clinicId) {
+    return this.prisma.appointment.findFirst({
+      where: { id, clinicId },
       include: { patient: true, dentist: true, payment: true },
     });
   }

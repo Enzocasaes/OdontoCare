@@ -4,10 +4,14 @@ export class MedicalRecordService {
     this.activityLogRepository = activityLogRepository;
   }
 
-  async createRecord(payload, actorId) {
-    const record = await this.medicalRecordRepository.create(payload);
+  async createRecord(payload, clinicId, actorId) {
+    const record = await this.medicalRecordRepository.create({
+      ...payload,
+      clinicId,
+    });
 
     await this.activityLogRepository.create({
+      clinicId,
       userId: actorId,
       action: 'MEDICAL_RECORD_CREATED',
       entity: 'MedicalRecord',
@@ -18,7 +22,7 @@ export class MedicalRecordService {
     return record;
   }
 
-  listByPatient(patientId) {
-    return this.medicalRecordRepository.listByPatient(patientId);
+  listByPatient(patientId, clinicId) {
+    return this.medicalRecordRepository.listByPatient(patientId, clinicId);
   }
 }

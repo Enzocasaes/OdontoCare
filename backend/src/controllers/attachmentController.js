@@ -13,7 +13,8 @@ export class AttachmentController {
     const attachment = await this.attachmentService.uploadFile(
       req.file,
       patientId,
-      req.user?.id,
+      req.user?.clinicId,
+      req.user,
       category,
       description,
       clinicalRecordId
@@ -27,6 +28,7 @@ export class AttachmentController {
     const limit = parseInt(req.query.limit) || 10;
     const attachments = await this.attachmentService.getAttachmentsByPatient(
       req.params.patientId,
+      req.user?.clinicId,
       page,
       limit
     );
@@ -36,6 +38,7 @@ export class AttachmentController {
   getByCategory = asyncHandler(async (req, res) => {
     const attachments = await this.attachmentService.getAttachmentsByCategory(
       req.params.patientId,
+      req.user?.clinicId,
       req.params.category
     );
     res.json(attachments);
@@ -43,14 +46,15 @@ export class AttachmentController {
 
   getByClinicalRecord = asyncHandler(async (req, res) => {
     const attachments = await this.attachmentService.getAttachmentByClinicalRecord(
-      req.params.clinicalRecordId
+      req.params.clinicalRecordId,
+      req.user?.clinicId
     );
     res.json(attachments);
   });
 
   download = asyncHandler(async (req, res) => {
     const { attachmentId } = req.params;
-    const attachment = await this.attachmentService.attachmentRepository.findById(attachmentId);
+    const attachment = await this.attachmentService.getAttachmentById(attachmentId, req.user?.clinicId);
 
     if (!attachment) {
       return res.status(404).json({ message: 'Arquivo não encontrado' });
@@ -68,7 +72,7 @@ export class AttachmentController {
 
   view = asyncHandler(async (req, res) => {
     const { attachmentId } = req.params;
-    const attachment = await this.attachmentService.attachmentRepository.findById(attachmentId);
+    const attachment = await this.attachmentService.getAttachmentById(attachmentId, req.user?.clinicId);
 
     if (!attachment) {
       return res.status(404).json({ message: 'Arquivo não encontrado' });
@@ -89,13 +93,14 @@ export class AttachmentController {
     const attachment = await this.attachmentService.updateAttachmentInfo(
       req.params.id,
       { category, description },
-      req.user?.id
+      req.user?.clinicId,
+      req.user
     );
     res.json(attachment);
   });
 
   delete = asyncHandler(async (req, res) => {
-    await this.attachmentService.deleteFile(req.params.id, req.user?.id);
+    await this.attachmentService.deleteFile(req.params.id, req.user?.clinicId, req.user);
     res.json({ message: 'Arquivo deletado com sucesso' });
   });
 }

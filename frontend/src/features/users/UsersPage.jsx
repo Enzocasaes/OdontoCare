@@ -1,28 +1,47 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../services/api';
-import { maskOnlyLetters } from '../../utils/masks';
+import { maskEmail, maskOnlyLetters } from '../../utils/masks';
 
 export const UsersPage = () => {
   const [users, setUsers] = useState([]);
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'RECEPTION' });
+  const [clinics, setClinics] = useState([]);
+  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'RECEPTION', clinicId: '' });
   const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
 
   const loadUsers = async () => {
     const response = await api.get('/users');
     setUsers(response.data);
   };
 
+  const loadClinics = async () => {
+    const response = await api.get('/clinics/mine');
+    setClinics(response.data);
+  };
+
   useEffect(() => {
     loadUsers();
+    loadClinics();
   }, []);
 
   const submit = async (event) => {
     event.preventDefault();
     setMessage('');
-    await api.post('/auth/register', form);
-    setForm({ name: '', email: '', password: '', role: 'RECEPTION' });
-    setMessage('Usuário cadastrado com sucesso.');
-    await loadUsers();
+    setError('');
+
+    if (!form.clinicId) {
+      setError('Selecione um consultório para o usuário.');
+      return;
+    }
+
+    try {
+      await api.post('/auth/register', form);
+      setForm({ name: '', email: '', password: '', role: 'RECEPTION', clinicId: '' });
+      setMessage('Usuário cadastrado com sucesso.');
+      await loadUsers();
+    } catch (apiError) {
+      setError(apiError.response?.data?.message || 'Falha ao cadastrar usuário.');
+    }
   };
 
   return (
@@ -41,8 +60,9 @@ export const UsersPage = () => {
         />
         <input
           value={form.email}
-          onChange={(event) => setForm({ ...form, email: event.target.value })}
+          onChange={(event) => setForm({ ...form, email: maskEmail(event.target.value) })}
           placeholder="Email"
+          type="email"
           className="rounded-lg border border-slate-300 px-3 py-2 dark:bg-slate-900"
         />
         <input
@@ -57,15 +77,27 @@ export const UsersPage = () => {
           onChange={(event) => setForm({ ...form, role: event.target.value })}
           className="rounded-lg border border-slate-300 px-3 py-2 dark:bg-slate-900"
         >
-          <option value="ADMIN">Admin</option>
           <option value="DENTIST">Dentista</option>
           <option value="RECEPTION">Recepção</option>
+        </select>
+        <select
+          value={form.clinicId}
+          onChange={(event) => setForm({ ...form, clinicId: event.target.value })}
+          className="rounded-lg border border-slate-300 px-3 py-2 dark:bg-slate-900"
+        >
+          <option value="">Selecione o consultório</option>
+          {clinics.map((clinic) => (
+            <option key={clinic.id} value={clinic.id}>
+              {clinic.name}
+            </option>
+          ))}
         </select>
         <button type="submit" className="rounded-lg bg-cyan-600 px-4 py-2 font-medium text-white">
           Cadastrar
         </button>
       </form>
 
+      {error && <p className="text-sm text-rose-600">{error}</p>}
       {message && <p className="text-sm text-emerald-600">{message}</p>}
 
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">

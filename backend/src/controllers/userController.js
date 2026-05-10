@@ -5,8 +5,8 @@ export class UserController {
     this.userService = userService;
   }
 
-  list = asyncHandler(async (_req, res) => {
-    const users = await this.userService.listUsers();
+  list = asyncHandler(async (req, res) => {
+    const users = await this.userService.listUsers(req.user);
     res.json(users);
   });
 }

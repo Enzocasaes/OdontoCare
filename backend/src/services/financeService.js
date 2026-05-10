@@ -1,3 +1,5 @@
+import { ApiError } from '../utils/apiError.js';
+
 export class FinanceService {
   constructor({ paymentRepository, treatmentRepository, activityLogRepository }) {
     this.paymentRepository = paymentRepository;
@@ -18,7 +20,7 @@ export class FinanceService {
    * @param {string} actorId - ID do usuário que está criando
    * @returns {Promise<Treatment>}
    */
-  async createTreatment(payload, actorId) {
+  async createTreatment(payload, clinicId, actorId) {
     const { patientId, description, totalAmount, installments, firstDueDate, observations } = payload;
 
     // Calcula valor de cada parcela
@@ -27,6 +29,7 @@ export class FinanceService {
 
     // Cria o tratamento com todas as parcelas de uma vez
     const treatment = await this.treatmentRepository.create({
+      clinicId,
       patientId,
       description,
       totalAmount,
@@ -42,12 +45,14 @@ export class FinanceService {
             totalInstallments: installments,
             dueDate,
             status: 'PENDING',
+            clinicId,
           };
         }),
       },
     });
 
     await this.activityLogRepository.create({
+      clinicId,
       userId: actorId,
       action: 'TREATMENT_CREATED',
       entity: 'Treatment',
@@ -65,36 +70,41 @@ export class FinanceService {
   /**
    * Busca um tratamento por ID
    */
-  async getTreatment(id) {
-    return this.treatmentRepository.findById(id);
+  async getTreatment(id, clinicId) {
+    return this.treatmentRepository.findById(id, clinicId);
   }
 
   /**
    * Lista tratamentos com filtros opcionais
    */
-  async listTreatments(filters = {}) {
-    return this.treatmentRepository.list(filters);
+  async listTreatments(filters = {}, clinicId) {
+    return this.treatmentRepository.list({ ...filters, clinicId });
   }
 
   /**
    * Lista tratamentos de um paciente específico
    */
-  async getPatientTreatments(patientId, filters = {}) {
-    return this.treatmentRepository.findByPatient(patientId, filters);
+  async getPatientTreatments(patientId, filters = {}, clinicId) {
+    return this.treatmentRepository.findByPatient(patientId, clinicId, filters);
   }
 
   /**
    * Atualiza o status de um tratamento
    */
-  async updateTreatmentStatus(id, status, actorId) {
+  async updateTreatmentStatus(id, status, clinicId, actorId) {
     const updateData = { status };
     if (status === 'COMPLETED') {
       updateData.completedAt = new Date();
     }
 
-    const treatment = await this.treatmentRepository.update(id, updateData);
+    const treatment = await this.treatmentRepository.update(id, clinicId, updateData);
+
+    if (!treatment) {
+      throw new ApiError(404, 'Tratamento não encontrado');
+    }
 
     await this.activityLogRepository.create({
+      clinicId,
       userId: actorId,
       action: 'TREATMENT_STATUS_UPDATED',
       entity: 'Treatment',
@@ -108,8 +118,8 @@ export class FinanceService {
   /**
    * Obtém resumo financeiro do paciente
    */
-  async getPatientFinancialSummary(patientId) {
-    return this.treatmentRepository.getPatientFinancialSummary(patientId);
+  async getPatientFinancialSummary(patientId, clinicId) {
+    return this.treatmentRepository.getPatientFinancialSummary(patientId, clinicId);
   }
 
   // ========== PAGAMENTOS ==========
@@ -117,26 +127,32 @@ export class FinanceService {
   /**
    * Registra o pagamento de uma parcela
    */
-  async registerPayment(paymentId, payload, actorId) {
+  async registerPayment(paymentId, payload, clinicId, actorId) {
     const { method } = payload;
     
     const payment = await this.paymentRepository.updateStatus(
       paymentId,
+      clinicId,
       'PAID',
       new Date(),
       method
     );
 
+    if (!payment) {
+      throw new ApiError(404, 'Pagamento não encontrado');
+    }
+
     // Verifica se todas as parcelas do tratamento foram pagas
-    const allPayments = await this.paymentRepository.findByTreatment(payment.treatment.id);
+    const allPayments = await this.paymentRepository.findByTreatment(payment.treatment.id, clinicId);
     const allPaid = allPayments.every((p) => p.status === 'PAID');
 
     // Se todas as parcelas foram pagas, atualiza o status do tratamento
     if (allPaid) {
-      await this.updateTreatmentStatus(payment.treatment.id, 'COMPLETED', actorId);
+      await this.updateTreatmentStatus(payment.treatment.id, 'COMPLETED', clinicId, actorId);
     }
 
     await this.activityLogRepository.create({
+      clinicId,
       userId: actorId,
       action: 'PAYMENT_REGISTERED',
       entity: 'Payment',
@@ -154,15 +170,21 @@ export class FinanceService {
   /**
    * Cancela/reverte um pagamento
    */
-  async cancelPayment(paymentId, actorId) {
+  async cancelPayment(paymentId, clinicId, actorId) {
     const payment = await this.paymentRepository.updateStatus(
       paymentId,
+      clinicId,
       'PENDING',
       null,
       null
     );
 
+    if (!payment) {
+      throw new ApiError(404, 'Pagamento não encontrado');
+    }
+
     await this.activityLogRepository.create({
+      clinicId,
       userId: actorId,
       action: 'PAYMENT_CANCELED',
       entity: 'Payment',
@@ -178,38 +200,42 @@ export class FinanceService {
   /**
    * Lista todos os pagamentos com filtros opcionais
    */
-  async listPayments(filters = {}) {
-    return this.paymentRepository.list(filters);
+  async listPayments(filters = {}, clinicId) {
+    return this.paymentRepository.list({ ...filters, clinicId });
   }
 
   /**
    * Busca um pagamento por ID
    */
-  async getPayment(id) {
-    return this.paymentRepository.findById(id);
+  async getPayment(id, clinicId) {
+    return this.paymentRepository.findById(id, clinicId);
   }
 
   /**
    * Lista pagamentos em atraso
    */
-  async getOverduePayments() {
-    return this.paymentRepository.findOverdue();
+  async getOverduePayments(clinicId) {
+    return this.paymentRepository.findOverdue(clinicId);
   }
 
   /**
    * Lista parcelas de um tratamento específico
    */
-  async getTreatmentPayments(treatmentId) {
-    return this.paymentRepository.findByTreatment(treatmentId);
+  async getTreatmentPayments(treatmentId, clinicId) {
+    return this.paymentRepository.findByTreatment(treatmentId, clinicId);
   }
 
   // ========== MÉTODOS LEGADOS (manter compatibilidade) ==========
 
-  async createPayment(payload, actorId) {
+  async createPayment(payload, clinicId, actorId) {
     // Método legado - mantido para compatibilidade
-    const payment = await this.paymentRepository.create(payload);
+    const payment = await this.paymentRepository.create({
+      ...payload,
+      clinicId,
+    });
 
     await this.activityLogRepository.create({
+      clinicId,
       userId: actorId,
       action: 'PAYMENT_CREATED',
       entity: 'Payment',
@@ -220,15 +246,21 @@ export class FinanceService {
     return payment;
   }
 
-  async updatePaymentStatus(id, status, actorId) {
+  async updatePaymentStatus(id, status, clinicId, actorId) {
     // Método legado - mantido para compatibilidade
     const payment = await this.paymentRepository.updateStatus(
       id,
+      clinicId,
       status,
       status === 'PAID' ? new Date() : null
     );
 
+    if (!payment) {
+      throw new ApiError(404, 'Pagamento não encontrado');
+    }
+
     await this.activityLogRepository.create({
+      clinicId,
       userId: actorId,
       action: 'PAYMENT_STATUS_UPDATED',
       entity: 'Payment',

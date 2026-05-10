@@ -7,8 +7,12 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
+    "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev"
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "db:clean": "node scripts/clean_database.js",
+    "admin:init": "node scripts/init_admin.js"
   },
   "keywords": [],
   "author": "",

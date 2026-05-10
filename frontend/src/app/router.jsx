@@ -2,10 +2,10 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 import { AppLayout } from '../components/AppLayout';
 import { LoginPage } from '../features/auth/LoginPage';
-import { RegisterPage } from '../features/auth/RegisterPage';
 import { ForgotPasswordPage } from '../features/auth/ForgotPasswordPage';
 import { ResetPasswordPage } from '../features/auth/ResetPasswordPage';
 import { DashboardPage } from '../features/dashboard/DashboardPage';
+import { ClinicsPage } from '../features/clinics/ClinicsPage';
 import { PatientsPage } from '../features/patients/PatientsPage';
 import { PatientFormPage } from '../features/patients/PatientFormPage';
 import { AppointmentsPage } from '../features/appointments/AppointmentsPage';
@@ -14,7 +14,6 @@ import { RecordsPage } from '../features/records/RecordsPage';
 import { FinancePage } from '../features/finance/FinancePage';
 import { UsersPage } from '../features/users/UsersPage';
 import { DentistsPage } from '../features/dentists/DentistsPage';
-import { LogsPage } from '../features/logs/LogsPage';
 import { PatientRecordsPage } from '../features/medical-records/PatientRecordsPage';
 import { ReportsPage } from '../features/reports/ReportsPage';
 
@@ -22,7 +21,7 @@ export const AppRouter = () => {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/register" element={<Navigate to="/login" replace />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
 
@@ -34,27 +33,21 @@ export const AppRouter = () => {
           </ProtectedRoute>
         }
       >
-        <Route index element={<DashboardPage />} />
-        <Route path="patients" element={<PatientsPage />} />
-        <Route path="patients/new" element={<PatientFormPage />} />
-        <Route path="patients/:patientId/edit" element={<PatientFormPage />} />
-        <Route path="patients/:patientId/records" element={<PatientRecordsPage />} />
-        <Route path="appointments" element={<AppointmentsPage />} />
-        <Route path="appointments/:id" element={<AppointmentDetailPage />} />
-        <Route path="records" element={<RecordsPage />} />
+        <Route index element={<ProtectedRoute excludeRoles={["ADMIN"]}><DashboardPage /></ProtectedRoute>} />
+        <Route path="patients" element={<ProtectedRoute excludeRoles={["ADMIN"]}><PatientsPage /></ProtectedRoute>} />
+        <Route path="patients/new" element={<ProtectedRoute excludeRoles={["ADMIN"]}><PatientFormPage /></ProtectedRoute>} />
+        <Route path="patients/:patientId/edit" element={<ProtectedRoute excludeRoles={["ADMIN"]}><PatientFormPage /></ProtectedRoute>} />
+        <Route path="patients/:patientId/records" element={<ProtectedRoute excludeRoles={["ADMIN"]}><PatientRecordsPage /></ProtectedRoute>} />
+        <Route path="appointments" element={<ProtectedRoute excludeRoles={["ADMIN"]}><AppointmentsPage /></ProtectedRoute>} />
+        <Route path="appointments/:id" element={<ProtectedRoute excludeRoles={["ADMIN"]}><AppointmentDetailPage /></ProtectedRoute>} />
+        <Route path="records" element={<ProtectedRoute excludeRoles={["ADMIN"]}><RecordsPage /></ProtectedRoute>} />
+        <Route path="finance" element={<ProtectedRoute excludeRoles={["ADMIN"]}><FinancePage /></ProtectedRoute>} />
+        <Route path="reports" element={<ProtectedRoute excludeRoles={["ADMIN"]}><ReportsPage /></ProtectedRoute>} />
         <Route
-          path="finance"
+          path="clinics"
           element={
-            <ProtectedRoute roles={['ADMIN', 'RECEPTION']}>
-              <FinancePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="reports"
-          element={
-            <ProtectedRoute roles={['ADMIN', 'RECEPTION']}>
-              <ReportsPage />
+            <ProtectedRoute roles={['ADMIN']}>
+              <ClinicsPage />
             </ProtectedRoute>
           }
         />
@@ -66,15 +59,15 @@ export const AppRouter = () => {
             </ProtectedRoute>
           }
         />
-        <Route path="dentists" element={<DentistsPage />} />
         <Route
-          path="logs"
+          path="dentists"
           element={
             <ProtectedRoute roles={['ADMIN']}>
-              <LogsPage />
+              <DentistsPage />
             </ProtectedRoute>
           }
         />
+        {/* Logs removed from admin view per request */}
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

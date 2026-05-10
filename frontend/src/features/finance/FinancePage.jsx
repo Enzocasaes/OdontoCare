@@ -125,8 +125,8 @@ export const FinancePage = () => {
     <section className="space-y-6">
       {/* Header */}
       <header className="space-y-1">
-        <h2 className="text-3xl font-bold text-slate-100">Gerenciamento Financeiro</h2>
-        <p className="text-sm text-slate-300">
+        <h2 className="text-3xl font-bold text-black">Gerenciamento Financeiro</h2>
+        <p className="text-sm text-black">
           Acompanhamento completo de tratamentos, pagamentos e pendências
         </p>
       </header>

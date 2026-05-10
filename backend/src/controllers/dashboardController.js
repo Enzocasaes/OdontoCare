@@ -5,8 +5,8 @@ export class DashboardController {
     this.dashboardService = dashboardService;
   }
 
-  overview = asyncHandler(async (_req, res) => {
-    const data = await this.dashboardService.getOverview();
+  overview = asyncHandler(async (req, res) => {
+    const data = await this.dashboardService.getOverview(req.user?.clinicId);
     res.json(data);
   });
 }

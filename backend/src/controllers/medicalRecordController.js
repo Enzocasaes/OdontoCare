@@ -6,12 +6,12 @@ export class MedicalRecordController {
   }
 
   create = asyncHandler(async (req, res) => {
-    const record = await this.medicalRecordService.createRecord(req.body, req.user.id);
+    const record = await this.medicalRecordService.createRecord(req.body, req.user?.clinicId, req.user.id);
     res.status(201).json(record);
   });
 
   listByPatient = asyncHandler(async (req, res) => {
-    const records = await this.medicalRecordService.listByPatient(req.params.patientId);
+    const records = await this.medicalRecordService.listByPatient(req.params.patientId, req.user?.clinicId);
     res.json(records);
   });
 }

@@ -5,8 +5,8 @@ export class OdontogramService {
     this.odontogramRepository = odontogramRepository;
   }
 
-  async createOdontogram(patientId, userId, teeth = null, observations = '') {
-    const exists = await this.odontogramRepository.existsByPatientId(patientId);
+  async createOdontogram(patientId, clinicId, actor, teeth = null, observations = '') {
+    const exists = await this.odontogramRepository.existsByPatientId(patientId, clinicId);
     if (exists) {
       throw new ApiError(409, 'Este paciente já possui um odontograma');
     }
@@ -15,8 +15,9 @@ export class OdontogramService {
     const defaultTeeth = teeth || this.getDefaultTeethStructure();
 
     return await this.odontogramRepository.create({
+      clinicId,
       patientId,
-      dentistId: userId || null,
+      dentistId: actor?.id || null,
       teeth: defaultTeeth,
       observations,
     });
@@ -47,33 +48,33 @@ export class OdontogramService {
     return teeth;
   }
 
-  async getOdontogram(patientId) {
-    const odontogram = await this.odontogramRepository.findByPatientId(patientId);
+  async getOdontogram(patientId, clinicId) {
+    const odontogram = await this.odontogramRepository.findByPatientId(patientId, clinicId);
     return odontogram;
   }
 
-  async updateOdontogram(patientId, data, userId) {
-    let odontogram = await this.odontogramRepository.findByPatientId(patientId);
+  async updateOdontogram(patientId, clinicId, data, actor) {
+    let odontogram = await this.odontogramRepository.findByPatientId(patientId, clinicId);
     
     if (!odontogram) {
       throw new ApiError(404, 'Odontograma não encontrado');
     }
 
-    if (userId && odontogram.dentistId && odontogram.dentistId !== userId && userId.role !== 'ADMIN') {
+    if (actor && odontogram.dentistId && odontogram.dentistId !== actor.id && actor.role !== 'ADMIN') {
       throw new ApiError(403, 'Você não tem permissão para atualizar este odontograma');
     }
 
-    return await this.odontogramRepository.update(patientId, data);
+    return await this.odontogramRepository.update(patientId, clinicId, data);
   }
 
-  async updateToothData(patientId, toothNumber, toothData, userId) {
-    const odontogram = await this.odontogramRepository.findByPatientId(patientId);
+  async updateToothData(patientId, clinicId, toothNumber, toothData, actor) {
+    const odontogram = await this.odontogramRepository.findByPatientId(patientId, clinicId);
     
     if (!odontogram) {
       throw new ApiError(404, 'Odontograma não encontrado');
     }
 
-    if (userId && odontogram.dentistId && odontogram.dentistId !== userId && userId.role !== 'ADMIN') {
+    if (actor && odontogram.dentistId && odontogram.dentistId !== actor.id && actor.role !== 'ADMIN') {
       throw new ApiError(403, 'Você não tem permissão para atualizar este odontograma');
     }
 
@@ -84,21 +85,21 @@ export class OdontogramService {
       number: toothNumber,
     };
 
-    return await this.odontogramRepository.updateTeethData(patientId, teeth);
+    return await this.odontogramRepository.updateTeethData(patientId, clinicId, teeth);
   }
 
-  async deleteOdontogram(patientId, userId) {
-    const odontogram = await this.odontogramRepository.findByPatientId(patientId);
+  async deleteOdontogram(patientId, clinicId, actor) {
+    const odontogram = await this.odontogramRepository.findByPatientId(patientId, clinicId);
     
     if (!odontogram) {
       throw new ApiError(404, 'Odontograma não encontrado');
     }
 
-    if (userId && odontogram.dentistId && odontogram.dentistId !== userId && userId.role !== 'ADMIN') {
+    if (actor && odontogram.dentistId && odontogram.dentistId !== actor.id && actor.role !== 'ADMIN') {
       throw new ApiError(403, 'Você não tem permissão para deletar este odontograma');
     }
 
-    return await this.odontogramRepository.deleteByPatientId(patientId);
+    return await this.odontogramRepository.deleteByPatientId(patientId, clinicId);
   }
 
   getToothStatusLabel(status) {

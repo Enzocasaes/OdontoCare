@@ -14,3 +14,20 @@ The React Compiler is not enabled on this template because of its impact on dev 
 ## Expanding the ESLint configuration
 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+
+Production build and API configuration
+------------------------------------
+
+ - **VITE_API_URL**: the frontend reads the API base URL from the `VITE_API_URL` environment variable. Create a `frontend/.env.production` file containing:
+
+```
+VITE_API_URL=https://api.yourdomain.com/api
+```
+
+ - To build for production (mode `production`) run:
+
+```
+npm run build --prefix frontend
+```
+
+ - The built files will embed the `VITE_API_URL` value present at build time.

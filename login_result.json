@@ -1,0 +1,4 @@
+{
+  "status": 200,
+  "body": "{\"token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Ijk4MDFkZGUwLWM2OWUtNDA2ZS1hOThkLTAwOWY3MjZlYjc0MCIsImVtYWlsIjoiZW56b2Nhc2FpczA4MDJAZ21haWwuY29tIiwicm9sZSI6IkFETUlOIiwibmFtZSI6IkVuem8gY2FzYWVzIiwiY2xpbmljSWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEiLCJpYXQiOjE3NzgzNzM0MzQsImV4cCI6MTc3ODQ1OTgzNH0.WmaiBZvjpl_sQuVZ1m3k3fez_vkV41R9Wdx_Vb4JoGE\",\"user\":{\"id\":\"9801dde0-c69e-406e-a98d-009f726eb740\",\"name\":\"Enzo casaes\",\"email\":\"enzocasais0802@gmail.com\",\"role\":\"ADMIN\",\"clinicId\":\"00000000-0000-0000-0000-000000000001\"},\"clinic\":{\"id\":\"00000000-0000-0000-0000-000000000001\",\"name\":\"Consultório Principal\"}}"
+}

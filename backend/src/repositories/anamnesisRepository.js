@@ -5,7 +5,7 @@ export class AnamnesisRepository {
 
   async createVersion(data) {
     const lastVersion = await this.prisma.anamnesis.findFirst({
-      where: { patientId: data.patientId },
+      where: { patientId: data.patientId, clinicId: data.clinicId },
       orderBy: { version: 'desc' },
     });
 
@@ -17,27 +17,39 @@ export class AnamnesisRepository {
     });
   }
 
-  listByPatient(patientId) {
+  listByPatient(patientId, clinicId) {
     return this.prisma.anamnesis.findMany({
-      where: { patientId },
+      where: { patientId, clinicId },
       orderBy: { version: 'desc' },
     });
   }
 
-  findById(id) {
-    return this.prisma.anamnesis.findUnique({
-      where: { id },
+  findById(id, clinicId) {
+    return this.prisma.anamnesis.findFirst({
+      where: { id, clinicId },
     });
   }
 
-  async update(id, data) {
+  async update(id, clinicId, data) {
+    const anamnesis = await this.prisma.anamnesis.findFirst({ where: { id, clinicId } });
+
+    if (!anamnesis) {
+      return null;
+    }
+
     return this.prisma.anamnesis.update({
       where: { id },
       data,
     });
   }
 
-  async delete(id) {
+  async delete(id, clinicId) {
+    const anamnesis = await this.prisma.anamnesis.findFirst({ where: { id, clinicId } });
+
+    if (!anamnesis) {
+      return null;
+    }
+
     return this.prisma.anamnesis.delete({
       where: { id },
     });

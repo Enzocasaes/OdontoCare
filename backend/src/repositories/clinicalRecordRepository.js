@@ -15,9 +15,9 @@ export class ClinicalRecordRepository {
     });
   }
 
-  async findById(id) {
-    return await prisma.clinicalRecord.findUnique({
-      where: { id },
+  async findById(id, clinicId) {
+    return await prisma.clinicalRecord.findFirst({
+      where: { id, clinicId },
       include: {
         dentist: {
           select: { id: true, name: true, email: true },
@@ -29,9 +29,9 @@ export class ClinicalRecordRepository {
     });
   }
 
-  async findByPatientId(patientId) {
+  async findByPatientId(patientId, clinicId) {
     return await prisma.clinicalRecord.findMany({
-      where: { patientId },
+      where: { patientId, clinicId },
       include: {
         dentist: {
           select: { id: true, name: true, email: true },
@@ -44,9 +44,9 @@ export class ClinicalRecordRepository {
     });
   }
 
-  async findByAppointmentId(appointmentId) {
-    return await prisma.clinicalRecord.findUnique({
-      where: { appointmentId },
+  async findByAppointmentId(appointmentId, clinicId) {
+    return await prisma.clinicalRecord.findFirst({
+      where: { appointmentId, clinicId },
       include: {
         dentist: {
           select: { id: true, name: true, email: true },
@@ -55,7 +55,13 @@ export class ClinicalRecordRepository {
     });
   }
 
-  async update(id, data) {
+  async update(id, clinicId, data) {
+    const record = await prisma.clinicalRecord.findFirst({ where: { id, clinicId } });
+
+    if (!record) {
+      return null;
+    }
+
     return await prisma.clinicalRecord.update({
       where: { id },
       data,
@@ -70,15 +76,21 @@ export class ClinicalRecordRepository {
     });
   }
 
-  async delete(id) {
+  async delete(id, clinicId) {
+    const record = await prisma.clinicalRecord.findFirst({ where: { id, clinicId } });
+
+    if (!record) {
+      return null;
+    }
+
     return await prisma.clinicalRecord.delete({
       where: { id },
     });
   }
 
-  async findByPatientIdPaginated(patientId, skip = 0, take = 10) {
+  async findByPatientIdPaginated(patientId, clinicId, skip = 0, take = 10) {
     const records = await prisma.clinicalRecord.findMany({
-      where: { patientId },
+      where: { patientId, clinicId },
       include: {
         dentist: {
           select: { id: true, name: true, email: true },
@@ -93,7 +105,7 @@ export class ClinicalRecordRepository {
     });
 
     const total = await prisma.clinicalRecord.count({
-      where: { patientId },
+      where: { patientId, clinicId },
     });
 
     return { records, total, page: Math.floor(skip / take) + 1, pageSize: take };

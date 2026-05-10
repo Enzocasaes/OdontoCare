@@ -40,6 +40,7 @@ model User {
   role                    Role
   createdAt               DateTime             @default(now())
   updatedAt               DateTime             @updatedAt
+  clinicMemberships       ClinicMember[]
   appointmentsAsDentist   Appointment[]        @relation("DentistAppointments")
   appointmentsAsReception Appointment[]        @relation("ReceptionAppointments")
   records                 MedicalRecord[]
@@ -51,17 +52,51 @@ model User {
   attachmentsUploaded     Attachment[]
 }
 
+model Clinic {
+  id                String          @id @default(uuid())
+  name              String
+  address           String
+  cnpj              String
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  members           ClinicMember[]
+  patients          Patient[]
+  appointments      Appointment[]
+  medicalRecords    MedicalRecord[]
+  anamneses         Anamnesis[]
+  clinicalRecords   ClinicalRecord[]
+  odontograms       Odontogram[]
+  attachments       Attachment[]
+  treatments        Treatment[]
+  payments          Payment[]
+  activityLogs      ActivityLog[]
+}
+
+model ClinicMember {
+  id         String   @id @default(uuid())
+  clinicId   String
+  userId     String
+  createdAt  DateTime @default(now())
+  clinic     Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([clinicId, userId])
+  @@index([userId])
+}
+
 model Patient {
   id                String              @id @default(uuid())
+  clinicId          String
   fullName          String
   email             String?
   phone             String
   birthDate         DateTime
-  document          String              @unique
+  document          String
   address           String
   lgpdConsent       Boolean             @default(false)
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
+  clinic            Clinic              @relation(fields: [clinicId], references: [id], onDelete: Cascade)
   appointments      Appointment[]
   medicalRecords    MedicalRecord[]
   anamneses         Anamnesis[]
@@ -69,10 +104,14 @@ model Patient {
   clinicalRecords   ClinicalRecord[]    @relation("PatientClinicalRecords")
   odontogram        Odontogram?         @relation("PatientOdontogram")
   attachments       Attachment[]        @relation("PatientAttachments")
+
+  @@unique([clinicId, document])
+  @@index([clinicId, fullName])
 }
 
 model Appointment {
   id             String            @id @default(uuid())
+  clinicId       String
   patientId      String
   dentistId      String
   receptionistId String?
@@ -82,17 +121,19 @@ model Appointment {
   status         AppointmentStatus @default(SCHEDULED)
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
+  clinic         Clinic            @relation(fields: [clinicId], references: [id], onDelete: Cascade)
   patient        Patient           @relation(fields: [patientId], references: [id])
   dentist        User              @relation("DentistAppointments", fields: [dentistId], references: [id])
   receptionist   User?             @relation("ReceptionAppointments", fields: [receptionistId], references: [id])
   medicalRecords MedicalRecord[]
   clinicalRecords ClinicalRecord[] @relation("AppointmentClinicalRecords")
 
-  @@index([startAt])
+  @@index([clinicId, startAt])
 }
 
 model MedicalRecord {
   id            String       @id @default(uuid())
+  clinicId      String
   patientId     String
   dentistId     String
   appointmentId String?
@@ -100,15 +141,17 @@ model MedicalRecord {
   treatmentPlan String
   evolution     String
   createdAt     DateTime     @default(now())
+  clinic        Clinic       @relation(fields: [clinicId], references: [id], onDelete: Cascade)
   patient       Patient      @relation(fields: [patientId], references: [id])
   dentist       User         @relation(fields: [dentistId], references: [id])
   appointment   Appointment? @relation(fields: [appointmentId], references: [id])
 
-  @@index([patientId, createdAt])
+  @@index([clinicId, patientId, createdAt])
 }
 
 model Anamnesis {
   id               String   @id @default(uuid())
+  clinicId         String
   patientId        String
   createdById      String?
   version          Int
@@ -117,14 +160,16 @@ model Anamnesis {
   systemicDiseases String
   notes            String
   createdAt        DateTime @default(now())
+  clinic           Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
   patient          Patient  @relation(fields: [patientId], references: [id])
   createdBy        User?    @relation("AnamnesisCreator", fields: [createdById], references: [id], onDelete: SetNull)
 
-  @@unique([patientId, version])
+  @@unique([clinicId, patientId, version])
 }
 
 model Payment {
   id                  String        @id @default(uuid())
+  clinicId            String
   treatmentId         String
   amount              Decimal       @db.Decimal(10, 2)
   installmentNumber   Int           // Ex: 1 (primeira parcela)
@@ -135,14 +180,16 @@ model Payment {
   status              PaymentStatus @default(PENDING)
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
+  clinic              Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
   treatment           Treatment     @relation(fields: [treatmentId], references: [id], onDelete: Cascade)
 
-  @@index([treatmentId, status])
+  @@index([clinicId, treatmentId, status])
   @@index([dueDate])
 }
 
 model Treatment {
   id              String            @id @default(uuid())
+  clinicId       String
   patientId       String
   description     String            // Ex: "Tratamento de cárie - dente 14"
   totalAmount     Decimal           @db.Decimal(10, 2)
@@ -152,24 +199,27 @@ model Treatment {
   observations    String?
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
+  clinic          Clinic            @relation(fields: [clinicId], references: [id], onDelete: Cascade)
   patient         Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
   payments        Payment[]
 
-  @@index([patientId, status])
+  @@index([clinicId, patientId, status])
   @@index([createdAt])
 }
 
 model ActivityLog {
   id        String   @id @default(uuid())
+  clinicId  String
   userId    String
   action    String
   entity    String
   entityId  String
   metadata  Json
   createdAt DateTime @default(now())
+  clinic    Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id])
 
-  @@index([createdAt])
+  @@index([clinicId, createdAt])
 }
 
 model PasswordResetToken {
@@ -186,6 +236,7 @@ model PasswordResetToken {
 
 model ClinicalRecord {
   id              String   @id @default(uuid())
+  clinicId       String
   patientId       String
   dentistId       String?
   appointmentId   String?
@@ -195,31 +246,36 @@ model ClinicalRecord {
   notes           String?  // Observações adicionais
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  clinic          Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
   patient         Patient  @relation("PatientClinicalRecords", fields: [patientId], references: [id], onDelete: Cascade)
   dentist         User?    @relation("DentistClinicalRecords", fields: [dentistId], references: [id], onDelete: SetNull)
   appointment     Appointment? @relation("AppointmentClinicalRecords", fields: [appointmentId], references: [id], onDelete: SetNull)
   attachments     Attachment[]
 
-  @@index([patientId, createdAt])
-  @@index([dentistId])
+  @@index([clinicId, patientId, createdAt])
+  @@index([clinicId, dentistId])
 }
 
 model Odontogram {
   id            String   @id @default(uuid())
+  clinicId      String
   patientId     String   @unique
   dentistId     String?
   teeth         Json     // Estrutura JSON com dados de todos os dentes (32 dentes permanentes)
   observations  String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  clinic        Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
   patient       Patient  @relation("PatientOdontogram", fields: [patientId], references: [id], onDelete: Cascade)
   dentist       User?    @relation("DentistOdontogram", fields: [dentistId], references: [id], onDelete: SetNull)
 
-  @@index([patientId])
+  @@unique([clinicId, patientId])
+  @@index([clinicId, patientId])
 }
 
 model Attachment {
   id              String   @id @default(uuid())
+  clinicId        String
   patientId       String
   clinicalRecordId String?
   uploadedById    String?
@@ -232,11 +288,12 @@ model Attachment {
   description     String?  // Descrição adicional
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  clinic          Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
   patient         Patient  @relation("PatientAttachments", fields: [patientId], references: [id], onDelete: Cascade)
   clinicalRecord  ClinicalRecord? @relation(fields: [clinicalRecordId], references: [id], onDelete: SetNull)
   uploadedBy      User?    @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
 
-  @@index([patientId])
-  @@index([clinicalRecordId])
-  @@index([createdAt])
+  @@index([clinicId, patientId])
+  @@index([clinicId, clinicalRecordId])
+  @@index([clinicId, createdAt])
 }

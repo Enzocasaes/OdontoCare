@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Clinic" ADD COLUMN "address" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "Clinic" ADD COLUMN "cnpj" TEXT NOT NULL DEFAULT '';

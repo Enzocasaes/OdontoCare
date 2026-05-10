@@ -12,9 +12,9 @@ export class AttachmentRepository {
     });
   }
 
-  async findById(id) {
-    return await prisma.attachment.findUnique({
-      where: { id },
+  async findById(id, clinicId) {
+    return await prisma.attachment.findFirst({
+      where: { id, clinicId },
       include: {
         uploadedBy: {
           select: { id: true, name: true, email: true },
@@ -23,9 +23,9 @@ export class AttachmentRepository {
     });
   }
 
-  async findByPatientId(patientId) {
+  async findByPatientId(patientId, clinicId) {
     return await prisma.attachment.findMany({
-      where: { patientId },
+      where: { patientId, clinicId },
       include: {
         uploadedBy: {
           select: { id: true, name: true, email: true },
@@ -35,9 +35,9 @@ export class AttachmentRepository {
     });
   }
 
-  async findByPatientIdPaginated(patientId, skip = 0, take = 10) {
+  async findByPatientIdPaginated(patientId, clinicId, skip = 0, take = 10) {
     const attachments = await prisma.attachment.findMany({
-      where: { patientId },
+      where: { patientId, clinicId },
       include: {
         uploadedBy: {
           select: { id: true, name: true, email: true },
@@ -49,15 +49,15 @@ export class AttachmentRepository {
     });
 
     const total = await prisma.attachment.count({
-      where: { patientId },
+      where: { patientId, clinicId },
     });
 
     return { attachments, total, page: Math.floor(skip / take) + 1, pageSize: take };
   }
 
-  async findByClinicalRecordId(clinicalRecordId) {
+  async findByClinicalRecordId(clinicalRecordId, clinicId) {
     return await prisma.attachment.findMany({
-      where: { clinicalRecordId },
+      where: { clinicalRecordId, clinicId },
       include: {
         uploadedBy: {
           select: { id: true, name: true, email: true },
@@ -67,10 +67,11 @@ export class AttachmentRepository {
     });
   }
 
-  async findByCategory(patientId, category) {
+  async findByCategory(patientId, clinicId, category) {
     return await prisma.attachment.findMany({
       where: {
         patientId,
+        clinicId,
         category,
       },
       include: {
@@ -82,7 +83,13 @@ export class AttachmentRepository {
     });
   }
 
-  async update(id, data) {
+  async update(id, clinicId, data) {
+    const attachment = await prisma.attachment.findFirst({ where: { id, clinicId } });
+
+    if (!attachment) {
+      return null;
+    }
+
     return await prisma.attachment.update({
       where: { id },
       data,
@@ -94,27 +101,33 @@ export class AttachmentRepository {
     });
   }
 
-  async delete(id) {
+  async delete(id, clinicId) {
+    const attachment = await prisma.attachment.findFirst({ where: { id, clinicId } });
+
+    if (!attachment) {
+      return null;
+    }
+
     return await prisma.attachment.delete({
       where: { id },
     });
   }
 
-  async deleteByPatientId(patientId) {
+  async deleteByPatientId(patientId, clinicId) {
     return await prisma.attachment.deleteMany({
-      where: { patientId },
+      where: { patientId, clinicId },
     });
   }
 
-  async countByPatient(patientId) {
+  async countByPatient(patientId, clinicId) {
     return await prisma.attachment.count({
-      where: { patientId },
+      where: { patientId, clinicId },
     });
   }
 
-  async getTotalSizeByPatient(patientId) {
+  async getTotalSizeByPatient(patientId, clinicId) {
     const result = await prisma.attachment.aggregate({
-      where: { patientId },
+      where: { patientId, clinicId },
       _sum: { fileSize: true },
     });
     return result._sum.fileSize || 0;

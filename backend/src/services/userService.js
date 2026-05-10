@@ -3,7 +3,7 @@ export class UserService {
     this.userRepository = userRepository;
   }
 
-  listUsers() {
-    return this.userRepository.list();
+  listUsers(actor) {
+    return this.userRepository.listForActor(actor);
   }
 }

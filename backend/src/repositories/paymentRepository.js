@@ -16,9 +16,15 @@ export class PaymentRepository {
     });
   }
 
-  updateStatus(id, status, paidAt = null, method = null) {
+  async updateStatus(id, clinicId, status, paidAt = null, method = null) {
     const updateData = { status, paidAt };
     if (method) updateData.method = method;
+
+    const payment = await this.prisma.payment.findFirst({ where: { id, clinicId } });
+
+    if (!payment) {
+      return null;
+    }
 
     return this.prisma.payment.update({
       where: { id },
@@ -33,9 +39,9 @@ export class PaymentRepository {
     });
   }
 
-  findById(id) {
-    return this.prisma.payment.findUnique({
-      where: { id },
+  findById(id, clinicId) {
+    return this.prisma.payment.findFirst({
+      where: { id, clinicId },
       include: {
         treatment: {
           include: {
@@ -50,6 +56,7 @@ export class PaymentRepository {
     const where = {};
     if (filters.status) where.status = filters.status;
     if (filters.treatmentId) where.treatmentId = filters.treatmentId;
+    if (filters.clinicId) where.clinicId = filters.clinicId;
 
     return this.prisma.payment.findMany({
       where,
@@ -64,16 +71,17 @@ export class PaymentRepository {
     });
   }
 
-  findByTreatment(treatmentId) {
+  findByTreatment(treatmentId, clinicId) {
     return this.prisma.payment.findMany({
-      where: { treatmentId },
+      where: { treatmentId, clinicId },
       orderBy: { installmentNumber: 'asc' },
     });
   }
 
-  findOverdue() {
+  findOverdue(clinicId) {
     return this.prisma.payment.findMany({
       where: {
+        clinicId,
         status: 'PENDING',
         dueDate: {
           lt: new Date(),

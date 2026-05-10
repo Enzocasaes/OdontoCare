@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useNavigate, Navigate } from 'react-router-dom';
 import { login } from './authSlice';
+import { maskEmail } from '../../utils/masks';
 
 const schema = z.object({
   email: z.string().email('Informe um email valido'),
@@ -39,7 +40,12 @@ export const LoginPage = () => {
         <div className="mt-6 space-y-4">
           <div>
             <label className="text-sm text-slate-700">Email</label>
-            <input {...register('email')} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
+            <input
+              {...register('email', { setValueAs: (value) => maskEmail(value) })}
+              type="email"
+              autoComplete="email"
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+            />
             {errors.email && <p className="text-xs text-rose-600">{errors.email.message}</p>}
           </div>
 
@@ -54,10 +60,6 @@ export const LoginPage = () => {
           <button disabled={loading} className="w-full rounded-lg bg-cyan-600 py-2 font-medium text-white hover:bg-cyan-700">
             {loading ? 'Entrando...' : 'Entrar'}
           </button>
-
-          <Link to="/register" className="block text-center text-sm text-cyan-700">
-            Criar conta
-          </Link>
 
           <Link to="/forgot-password" className="block text-center text-sm text-cyan-700">
             Esqueci minha senha

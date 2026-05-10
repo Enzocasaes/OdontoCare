@@ -5,52 +5,53 @@ export class ClinicalRecordService {
     this.clinicalRecordRepository = clinicalRecordRepository;
   }
 
-  async createRecord(data, userId) {
+  async createRecord(data, clinicId, actor) {
     if (!data.patientId || !data.procedures || !data.diagnosis) {
       throw new ApiError(400, 'Dados obrigatórios faltando: patientId, procedures, diagnosis');
     }
 
     return await this.clinicalRecordRepository.create({
       ...data,
-      dentistId: userId || null,
+      clinicId,
+      dentistId: actor?.id || null,
     });
   }
 
-  async getRecordById(recordId) {
-    const record = await this.clinicalRecordRepository.findById(recordId);
+  async getRecordById(recordId, clinicId) {
+    const record = await this.clinicalRecordRepository.findById(recordId, clinicId);
     if (!record) {
       throw new ApiError(404, 'Ficha clínica não encontrada');
     }
     return record;
   }
 
-  async listByPatient(patientId, page = 1, limit = 10) {
+  async listByPatient(patientId, clinicId, page = 1, limit = 10) {
     const skip = (page - 1) * limit;
-    return await this.clinicalRecordRepository.findByPatientIdPaginated(patientId, skip, limit);
+    return await this.clinicalRecordRepository.findByPatientIdPaginated(patientId, clinicId, skip, limit);
   }
 
-  async updateRecord(recordId, data, userId) {
-    const record = await this.getRecordById(recordId);
+  async updateRecord(recordId, data, clinicId, actor) {
+    const record = await this.getRecordById(recordId, clinicId);
 
-    if (userId && record.dentistId && record.dentistId !== userId && userId.role !== 'ADMIN') {
+    if (actor && record.dentistId && record.dentistId !== actor.id && actor.role !== 'ADMIN') {
       throw new ApiError(403, 'Você não tem permissão para atualizar este registro');
     }
 
-    return await this.clinicalRecordRepository.update(recordId, data);
+    return await this.clinicalRecordRepository.update(recordId, clinicId, data);
   }
 
-  async deleteRecord(recordId, userId) {
-    const record = await this.getRecordById(recordId);
+  async deleteRecord(recordId, clinicId, actor) {
+    const record = await this.getRecordById(recordId, clinicId);
 
-    if (userId && record.dentistId && record.dentistId !== userId && userId.role !== 'ADMIN') {
+    if (actor && record.dentistId && record.dentistId !== actor.id && actor.role !== 'ADMIN') {
       throw new ApiError(403, 'Você não tem permissão para deletar este registro');
     }
 
-    return await this.clinicalRecordRepository.delete(recordId);
+    return await this.clinicalRecordRepository.delete(recordId, clinicId);
   }
 
-  async getLatestByPatient(patientId) {
-    const records = await this.clinicalRecordRepository.findByPatientId(patientId);
+  async getLatestByPatient(patientId, clinicId) {
+    const records = await this.clinicalRecordRepository.findByPatientId(patientId, clinicId);
     return records.length > 0 ? records[0] : null;
   }
 }

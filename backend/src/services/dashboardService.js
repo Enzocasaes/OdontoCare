@@ -4,7 +4,7 @@ export class DashboardService {
     this.appointmentRepository = appointmentRepository;
   }
 
-  async getOverview() {
+  async getOverview(clinicId) {
     const start = new Date();
     start.setHours(0, 0, 0, 0);
 
@@ -12,8 +12,8 @@ export class DashboardService {
     end.setHours(23, 59, 59, 999);
 
     const [kpis, appointments] = await Promise.all([
-      this.dashboardRepository.kpis(start, end),
-      this.appointmentRepository.listToday(start, end),
+      this.dashboardRepository.kpis(start, end, clinicId),
+      this.appointmentRepository.listToday(start, end, clinicId),
     ]);
 
     return { kpis, appointments };

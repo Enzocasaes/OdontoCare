@@ -6,11 +6,15 @@ export class PatientService {
     this.activityLogRepository = activityLogRepository;
   }
 
-  async createPatient(payload, actorId) {
-    const patient = await this.patientRepository.create(payload);
+  async createPatient(payload, clinicId, actorId) {
+    const patient = await this.patientRepository.create({
+      ...payload,
+      clinicId,
+    });
 
     if (actorId) {
       await this.activityLogRepository.create({
+        clinicId,
         userId: actorId,
         action: 'PATIENT_CREATED',
         entity: 'Patient',
@@ -22,15 +26,20 @@ export class PatientService {
     return patient;
   }
 
-  listPatients(search = '') {
-    return search ? this.patientRepository.search(search) : this.patientRepository.list();
+  listPatients(search = '', clinicId) {
+    return search ? this.patientRepository.search(search, clinicId) : this.patientRepository.list(clinicId);
   }
 
-  async updatePatient(id, payload, actorId) {
-    const patient = await this.patientRepository.update(id, payload);
+  async updatePatient(id, payload, clinicId, actorId) {
+    const patient = await this.patientRepository.update(id, clinicId, payload);
+
+    if (!patient) {
+      throw new ApiError(404, 'Paciente não encontrado');
+    }
 
     if (actorId) {
       await this.activityLogRepository.create({
+        clinicId,
         userId: actorId,
         action: 'PATIENT_UPDATED',
         entity: 'Patient',
@@ -42,8 +51,8 @@ export class PatientService {
     return patient;
   }
 
-  async getPatientDetails(id) {
-    const patient = await this.patientRepository.findById(id);
+  async getPatientDetails(id, clinicId) {
+    const patient = await this.patientRepository.findById(id, clinicId);
 
     if (!patient) {
       throw new ApiError(404, 'Paciente não encontrado');

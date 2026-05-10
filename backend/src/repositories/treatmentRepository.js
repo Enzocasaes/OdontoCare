@@ -15,9 +15,9 @@ export class TreatmentRepository {
     });
   }
 
-  findById(id) {
-    return this.prisma.treatment.findUnique({
-      where: { id },
+  findById(id, clinicId) {
+    return this.prisma.treatment.findFirst({
+      where: { id, clinicId },
       include: {
         patient: true,
         payments: {
@@ -27,8 +27,8 @@ export class TreatmentRepository {
     });
   }
 
-  findByPatient(patientId, filters = {}) {
-    const where = { patientId };
+  findByPatient(patientId, clinicId, filters = {}) {
+    const where = { patientId, clinicId };
     if (filters.status) where.status = filters.status;
 
     return this.prisma.treatment.findMany({
@@ -46,6 +46,7 @@ export class TreatmentRepository {
     const where = {};
     if (filters.status) where.status = filters.status;
     if (filters.patientId) where.patientId = filters.patientId;
+    if (filters.clinicId) where.clinicId = filters.clinicId;
 
     return this.prisma.treatment.findMany({
       where,
@@ -59,7 +60,13 @@ export class TreatmentRepository {
     });
   }
 
-  update(id, data) {
+  async update(id, clinicId, data) {
+    const treatment = await this.prisma.treatment.findFirst({ where: { id, clinicId } });
+
+    if (!treatment) {
+      return null;
+    }
+
     return this.prisma.treatment.update({
       where: { id },
       data,
@@ -72,15 +79,21 @@ export class TreatmentRepository {
     });
   }
 
-  delete(id) {
+  async delete(id, clinicId) {
+    const treatment = await this.prisma.treatment.findFirst({ where: { id, clinicId } });
+
+    if (!treatment) {
+      return null;
+    }
+
     return this.prisma.treatment.delete({
       where: { id },
     });
   }
 
-  async getPatientFinancialSummary(patientId) {
+  async getPatientFinancialSummary(patientId, clinicId) {
     const treatments = await this.prisma.treatment.findMany({
-      where: { patientId },
+      where: { patientId, clinicId },
       include: {
         payments: true,
       },

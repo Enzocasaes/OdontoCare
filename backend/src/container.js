@@ -9,6 +9,7 @@ import { TreatmentRepository } from './repositories/treatmentRepository.js';
 import { DashboardRepository } from './repositories/dashboardRepository.js';
 import { ActivityLogRepository } from './repositories/activityLogRepository.js';
 import { PasswordResetRepository } from './repositories/passwordResetRepository.js';
+import { ClinicRepository } from './repositories/clinicRepository.js';
 import { AuthService } from './services/authService.js';
 import { UserService } from './services/userService.js';
 import { PatientService } from './services/patientService.js';
@@ -17,6 +18,7 @@ import { MedicalRecordService } from './services/medicalRecordService.js';
 import { AnamnesisService } from './services/anamnesisService.js';
 import { FinanceService } from './services/financeService.js';
 import { DashboardService } from './services/dashboardService.js';
+import { ClinicService } from './services/clinicService.js';
 import { AuthController } from './controllers/authController.js';
 import { UserController } from './controllers/userController.js';
 import { PatientController } from './controllers/patientController.js';
@@ -36,6 +38,7 @@ import { AttachmentService } from './services/attachmentService.js';
 import { ClinicalRecordController } from './controllers/clinicalRecordController.js';
 import { OdontogramController } from './controllers/odontogramController.js';
 import { AttachmentController } from './controllers/attachmentController.js';
+import { ClinicController } from './controllers/clinicController.js';
 
 const userRepository = new UserRepository(prisma);
 const patientRepository = new PatientRepository(prisma);
@@ -47,11 +50,12 @@ const treatmentRepository = new TreatmentRepository(prisma);
 const dashboardRepository = new DashboardRepository(prisma);
 const activityLogRepository = new ActivityLogRepository(prisma);
 const passwordResetRepository = new PasswordResetRepository(prisma);
+const clinicRepository = new ClinicRepository(prisma);
 const clinicalRecordRepository = new ClinicalRecordRepository();
 const odontogramRepository = new OdontogramRepository();
 const attachmentRepository = new AttachmentRepository();
 
-const authService = new AuthService({ userRepository, passwordResetRepository, activityLogRepository });
+const authService = new AuthService({ userRepository, passwordResetRepository, activityLogRepository, clinicRepository });
 const userService = new UserService({ userRepository });
 const patientService = new PatientService({ patientRepository, activityLogRepository });
 const appointmentService = new AppointmentService({ appointmentRepository, paymentRepository, activityLogRepository });
@@ -62,10 +66,12 @@ const dashboardService = new DashboardService({ dashboardRepository, appointment
 const clinicalRecordService = new ClinicalRecordService({ clinicalRecordRepository });
 const odontogramService = new OdontogramService({ odontogramRepository });
 const attachmentService = new AttachmentService({ attachmentRepository });
+const clinicService = new ClinicService({ clinicRepository, userRepository, activityLogRepository });
 
 export const container = {
 	activityLogRepository,
 	authController: new AuthController({ authService }),
+	clinicController: new ClinicController({ clinicService }),
 	userController: new UserController({ userService }),
 	patientController: new PatientController({ patientService }),
 	appointmentController: new AppointmentController({ appointmentService }),

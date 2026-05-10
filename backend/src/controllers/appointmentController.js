@@ -6,27 +6,27 @@ export class AppointmentController {
   }
 
   create = asyncHandler(async (req, res) => {
-    const appointment = await this.appointmentService.createAppointment(req.body, req.user?.id);
+    const appointment = await this.appointmentService.createAppointment(req.body, req.user?.clinicId, req.user?.id);
     res.status(201).json(appointment);
   });
 
   updateStatus = asyncHandler(async (req, res) => {
-    const appointment = await this.appointmentService.updateStatus(req.params.id, req.body.status, req.user?.id);
+    const appointment = await this.appointmentService.updateStatus(req.params.id, req.body.status, req.user?.clinicId, req.user?.id);
     res.json(appointment);
   });
 
   listByPeriod = asyncHandler(async (req, res) => {
-    const appointments = await this.appointmentService.listByPeriod(req.query.startAt, req.query.endAt);
+    const appointments = await this.appointmentService.listByPeriod(req.query.startAt, req.query.endAt, req.user?.clinicId);
     res.json(appointments);
   });
 
-  listToday = asyncHandler(async (_req, res) => {
-    const appointments = await this.appointmentService.listToday();
+  listToday = asyncHandler(async (req, res) => {
+    const appointments = await this.appointmentService.listToday(req.user?.clinicId);
     res.json(appointments);
   });
 
   getById = asyncHandler(async (req, res) => {
-    const appointment = await this.appointmentService.getById(req.params.id);
+    const appointment = await this.appointmentService.getById(req.params.id, req.user?.clinicId);
     res.json(appointment);
   });
 }

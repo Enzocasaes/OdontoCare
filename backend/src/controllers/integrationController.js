@@ -7,6 +7,7 @@ export class IntegrationController {
 
   whatsappWebhook = asyncHandler(async (req, res) => {
     await this.activityLogRepository.create({
+      clinicId: req.user.clinicId,
       userId: req.user.id,
       action: 'WHATSAPP_WEBHOOK_RECEIVED',
       entity: 'Integration',

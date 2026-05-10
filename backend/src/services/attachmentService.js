@@ -18,7 +18,7 @@ export class AttachmentService {
     this.attachmentRepository = attachmentRepository;
   }
 
-  async uploadFile(file, patientId, userId, category = 'outro', description = '', clinicalRecordId = null) {
+  async uploadFile(file, patientId, clinicId, actor, category = 'outro', description = '', clinicalRecordId = null) {
     // Validações
     if (!file) {
       throw new ApiError(400, 'Nenhum arquivo foi enviado');
@@ -50,9 +50,10 @@ export class AttachmentService {
 
       // Salvar referência no banco
       const attachment = await this.attachmentRepository.create({
+        clinicId,
         patientId,
         clinicalRecordId,
-        uploadedById: userId || null,
+        uploadedById: actor?.id || null,
         fileName: uniqueFileName,
         originalName: file.originalname,
         fileType: file.mimetype,
@@ -68,14 +69,14 @@ export class AttachmentService {
     }
   }
 
-  async deleteFile(attachmentId, userId) {
-    const attachment = await this.attachmentRepository.findById(attachmentId);
+  async deleteFile(attachmentId, clinicId, actor) {
+    const attachment = await this.attachmentRepository.findById(attachmentId, clinicId);
 
     if (!attachment) {
       throw new ApiError(404, 'Arquivo não encontrado');
     }
 
-    if (userId && attachment.uploadedBy?.id && attachment.uploadedBy.id !== userId && userId.role !== 'ADMIN') {
+    if (actor && attachment.uploadedBy?.id && attachment.uploadedBy.id !== actor.id && actor.role !== 'ADMIN') {
       throw new ApiError(403, 'Você não tem permissão para deletar este arquivo');
     }
 
@@ -90,36 +91,40 @@ export class AttachmentService {
       }
 
       // Deletar referência do banco
-      return await this.attachmentRepository.delete(attachmentId);
+      return await this.attachmentRepository.delete(attachmentId, clinicId);
     } catch (err) {
       throw new ApiError(500, 'Erro ao deletar arquivo: ' + err.message);
     }
   }
 
-  async getAttachmentsByPatient(patientId, page = 1, limit = 10) {
-    return await this.attachmentRepository.findByPatientIdPaginated(patientId, (page - 1) * limit, limit);
+  async getAttachmentsByPatient(patientId, clinicId, page = 1, limit = 10) {
+    return await this.attachmentRepository.findByPatientIdPaginated(patientId, clinicId, (page - 1) * limit, limit);
   }
 
-  async getAttachmentsByCategory(patientId, category) {
+  async getAttachmentsByCategory(patientId, clinicId, category) {
     if (!['raio-x', 'foto', 'documento', 'exame', 'outro'].includes(category)) {
       throw new ApiError(400, 'Categoria inválida');
     }
 
-    return await this.attachmentRepository.findByCategory(patientId, category);
+    return await this.attachmentRepository.findByCategory(patientId, clinicId, category);
   }
 
-  async getAttachmentByClinicalRecord(clinicalRecordId) {
-    return await this.attachmentRepository.findByClinicalRecordId(clinicalRecordId);
+  async getAttachmentByClinicalRecord(clinicalRecordId, clinicId) {
+    return await this.attachmentRepository.findByClinicalRecordId(clinicalRecordId, clinicId);
   }
 
-  async updateAttachmentInfo(attachmentId, data, userId) {
-    const attachment = await this.attachmentRepository.findById(attachmentId);
+  async getAttachmentById(attachmentId, clinicId) {
+    return await this.attachmentRepository.findById(attachmentId, clinicId);
+  }
+
+  async updateAttachmentInfo(attachmentId, data, clinicId, actor) {
+    const attachment = await this.attachmentRepository.findById(attachmentId, clinicId);
 
     if (!attachment) {
       throw new ApiError(404, 'Arquivo não encontrado');
     }
 
-    if (userId && attachment.uploadedBy?.id && attachment.uploadedBy.id !== userId && userId.role !== 'ADMIN') {
+    if (actor && attachment.uploadedBy?.id && attachment.uploadedBy.id !== actor.id && actor.role !== 'ADMIN') {
       throw new ApiError(403, 'Você não tem permissão para atualizar este arquivo');
     }
 
@@ -132,7 +137,7 @@ export class AttachmentService {
       updateData.category = data.category;
     }
 
-    return await this.attachmentRepository.update(attachmentId, updateData);
+    return await this.attachmentRepository.update(attachmentId, clinicId, updateData);
   }
 
   isAllowedFileType(mimetype) {

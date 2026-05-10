@@ -7,6 +7,14 @@ export const removeNonNumeric = (value) => {
 };
 
 /**
+ * Normalizes email by trimming spaces and lowercasing.
+ */
+export const maskEmail = (value) => {
+  if (!value) return '';
+  return value.trim().toLowerCase().replace(/\s+/g, '');
+};
+
+/**
  * Masks phone number: (XX) XXXXX-XXXX
  */
 export const maskPhone = (value) => {

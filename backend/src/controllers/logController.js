@@ -5,8 +5,8 @@ export class LogController {
     this.activityLogRepository = activityLogRepository;
   }
 
-  list = asyncHandler(async (_req, res) => {
-    const logs = await this.activityLogRepository.list(200);
+  list = asyncHandler(async (req, res) => {
+    const logs = await this.activityLogRepository.list(200, req.user?.clinicId);
     res.json(logs);
   });
 }

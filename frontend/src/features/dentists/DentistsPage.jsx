@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../../services/api';
-import { maskOnlyLetters } from '../../utils/masks';
+import { maskEmail, maskOnlyLetters } from '../../utils/masks';
 
-const initialForm = { name: '', email: '', password: '' };
+const initialForm = { name: '', email: '', password: '', clinicId: '' };
 
 export const DentistsPage = () => {
   const [users, setUsers] = useState([]);
+  const [clinics, setClinics] = useState([]);
   const [form, setForm] = useState(initialForm);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -16,8 +17,14 @@ export const DentistsPage = () => {
     setUsers(response.data);
   };
 
+  const loadClinics = async () => {
+    const response = await api.get('/clinics/mine');
+    setClinics(response.data);
+  };
+
   useEffect(() => {
     loadDentists();
+    loadClinics();
   }, []);
 
   const dentists = useMemo(() => users.filter((user) => user.role === 'DENTIST'), [users]);
@@ -27,8 +34,8 @@ export const DentistsPage = () => {
     setMessage('');
     setError('');
 
-    if (!form.name || !form.email || !form.password) {
-      setError('Preencha nome, email e senha.');
+    if (!form.name || !form.email || !form.password || !form.clinicId) {
+      setError('Preencha nome, email, senha e consultório.');
       return;
     }
 
@@ -68,8 +75,9 @@ export const DentistsPage = () => {
             <label className="text-sm text-slate-700 dark:text-slate-300">Email</label>
             <input
               value={form.email}
-              onChange={(event) => setForm({ ...form, email: event.target.value })}
+              onChange={(event) => setForm({ ...form, email: maskEmail(event.target.value) })}
               placeholder="email@clinica.com"
+              type="email"
               className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 dark:bg-slate-900"
             />
           </div>
@@ -83,6 +91,22 @@ export const DentistsPage = () => {
               placeholder="Senha com no minimo 8 caracteres"
               className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 dark:bg-slate-900"
             />
+          </div>
+
+          <div>
+            <label className="text-sm text-slate-700 dark:text-slate-300">Consultório</label>
+            <select
+              value={form.clinicId}
+              onChange={(event) => setForm({ ...form, clinicId: event.target.value })}
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 dark:bg-slate-900"
+            >
+              <option value="">Selecione o consultório</option>
+              {clinics.map((clinic) => (
+                <option key={clinic.id} value={clinic.id}>
+                  {clinic.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="rounded-xl bg-slate-50 p-3 text-sm text-slate-600 dark:bg-slate-800 dark:text-slate-300">

@@ -7,9 +7,9 @@ export class MedicalRecordRepository {
     return this.prisma.medicalRecord.create({ data, include: { patient: true, dentist: true } });
   }
 
-  listByPatient(patientId) {
+  listByPatient(patientId, clinicId) {
     return this.prisma.medicalRecord.findMany({
-      where: { patientId },
+      where: { patientId, clinicId },
       include: { dentist: true },
       orderBy: { createdAt: 'desc' },
     });

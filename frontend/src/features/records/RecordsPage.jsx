@@ -29,3 +29,5 @@ export const RecordsPage = () => {
     </section>
   );
 };
+
+export default RecordsPage;

@@ -6,14 +6,14 @@ import { logout } from '../features/auth/authSlice';
 
 const links = [
   { to: '/', label: 'Dashboard' },
+  { to: '/clinics', label: 'Consultórios', adminOnly: true },
   { to: '/patients', label: 'Pacientes' },
   { to: '/appointments', label: 'Agenda' },
-  { to: '/records', label: 'Prontuario' },
   { to: '/finance', label: 'Financeiro' },
   { to: '/reports', label: 'Relatórios' },
-  { to: '/users', label: 'Usuarios' },
-  { to: '/dentists', label: 'Dentistas' },
-  { to: '/logs', label: 'Logs' },
+  { to: '/users', label: 'Usuarios', adminOnly: true },
+  { to: '/dentists', label: 'Dentistas', adminOnly: true },
+  // logs removed from main navigation per admin requirements
 ];
 
 export const AppLayout = () => {
@@ -48,17 +48,19 @@ export const AppLayout = () => {
           )}
 
           <nav className="mt-6 flex flex-col gap-2">
-            {links.map((link) => (
-              <NavLink
-                key={link.to}
-                to={link.to}
-                className={({ isActive }) =>
-                  `rounded-lg px-3 py-2 text-sm transition ${isActive ? 'bg-cyan-500 text-white' : 'text-slate-200 hover:bg-slate-700'}`
-                }
-              >
-                {link.label}
-              </NavLink>
-            ))}
+              {user && links
+                .filter((l) => (user.role === 'ADMIN' ? l.adminOnly : !l.adminOnly))
+                .map((link) => (
+                  <NavLink
+                    key={link.to}
+                    to={link.to}
+                    className={({ isActive }) =>
+                      `rounded-lg px-3 py-2 text-sm transition ${isActive ? 'bg-cyan-500 text-white' : 'text-slate-200 hover:bg-slate-700'}`
+                    }
+                  >
+                    {link.label}
+                  </NavLink>
+                ))}
           </nav>
 
           <div className="mt-6 flex gap-2">

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Calendar, FilePlus2, Paperclip, PencilLine, Trash2 } from 'lucide-react';
 import api from '../../services/api';
-import { maskCPF, maskOnlyLetters, maskPhone } from '../../utils/masks';
+import { maskCPF, maskEmail, maskOnlyLetters, maskPhone } from '../../utils/masks';
 import { AttachmentUpload, AttachmentList } from '../medical-records/Attachments';
 
 const emptyPatientForm = {
@@ -286,8 +286,9 @@ export const PatientFormPage = () => {
             <input
               name="email"
               value={patientForm.email}
-              onChange={handlePatientChange}
+              onChange={(event) => setPatientForm((current) => ({ ...current, email: maskEmail(event.target.value) }))}
               placeholder="email@exemplo.com"
+              type="email"
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-black placeholder:text-gray-400 dark:border-slate-600 dark:bg-white dark:text-black dark:placeholder:text-gray-400"
             />
           </label>

@@ -6,15 +6,17 @@ export class AnamnesisService {
     this.activityLogRepository = activityLogRepository;
   }
 
-  async createVersion(payload, actorId) {
+  async createVersion(payload, clinicId, actor) {
     const anamnesis = await this.anamnesisRepository.createVersion({
       ...payload,
-      createdById: actorId || null,
+      clinicId,
+      createdById: actor?.id || null,
     });
 
-    if (actorId) {
+    if (actor?.id) {
       await this.activityLogRepository.create({
-        userId: actorId,
+        clinicId,
+        userId: actor.id,
         action: 'ANAMNESIS_VERSION_CREATED',
         entity: 'Anamnesis',
         entityId: anamnesis.id,
@@ -25,22 +27,23 @@ export class AnamnesisService {
     return anamnesis;
   }
 
-  listByPatient(patientId) {
-    return this.anamnesisRepository.listByPatient(patientId);
+  listByPatient(patientId, clinicId) {
+    return this.anamnesisRepository.listByPatient(patientId, clinicId);
   }
 
-  async updateById(id, payload, actorId) {
-    const anamnesis = await this.anamnesisRepository.findById(id);
+  async updateById(id, payload, clinicId, actor) {
+    const anamnesis = await this.anamnesisRepository.findById(id, clinicId);
 
     if (!anamnesis) {
       throw new ApiError(404, 'Anamnese não encontrada');
     }
 
-    const updatedAnamnesis = await this.anamnesisRepository.update(id, payload);
+    const updatedAnamnesis = await this.anamnesisRepository.update(id, clinicId, payload);
 
-    if (actorId) {
+    if (actor?.id) {
       await this.activityLogRepository.create({
-        userId: actorId,
+        clinicId,
+        userId: actor.id,
         action: 'ANAMNESIS_UPDATED',
         entity: 'Anamnesis',
         entityId: id,
@@ -51,18 +54,19 @@ export class AnamnesisService {
     return updatedAnamnesis;
   }
 
-  async deleteById(id, actorId) {
-    const anamnesis = await this.anamnesisRepository.findById(id);
+  async deleteById(id, clinicId, actor) {
+    const anamnesis = await this.anamnesisRepository.findById(id, clinicId);
 
     if (!anamnesis) {
       throw new ApiError(404, 'Anamnese não encontrada');
     }
 
-    await this.anamnesisRepository.delete(id);
+    await this.anamnesisRepository.delete(id, clinicId);
 
-    if (actorId) {
+    if (actor?.id) {
       await this.activityLogRepository.create({
-        userId: actorId,
+        clinicId,
+        userId: actor.id,
         action: 'ANAMNESIS_DELETED',
         entity: 'Anamnesis',
         entityId: id,

@@ -247,8 +247,8 @@ export const ReportsPage = () => {
     <div className="space-y-6">
       {/* Header */}
       <header className="space-y-1">
-        <h2 className="text-3xl font-bold text-slate-100">Relatórios</h2>
-        <p className="text-sm text-slate-300">
+        <h2 className="text-3xl font-bold text-black">Relatórios</h2>
+        <p className="text-sm text-black">
           Gere relatórios financeiros e operacionais do consultório
         </p>
       </header>

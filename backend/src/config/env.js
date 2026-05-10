@@ -4,6 +4,17 @@ dotenv.config();
 
 const required = ['DATABASE_URL', 'JWT_SECRET'];
 
+const parseCorsOrigins = (value) => {
+  if (!value) {
+    return ['http://localhost:5173', 'http://localhost:5174'];
+  }
+
+  return value
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+};
+
 for (const key of required) {
   if (!process.env[key]) {
     throw new Error(`Missing required environment variable: ${key}`);
@@ -16,5 +27,5 @@ export const env = {
   databaseUrl: process.env.DATABASE_URL,
   jwtSecret: process.env.JWT_SECRET,
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '1d',
-  corsOrigin: process.env.CORS_ORIGIN || ['http://localhost:5173', 'http://localhost:5174'],
+  corsOrigin: parseCorsOrigins(process.env.CORS_ORIGIN),
 };
